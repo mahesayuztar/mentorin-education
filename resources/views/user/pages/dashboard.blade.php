@@ -48,7 +48,7 @@
         <div class="user-info">
             <!-- Foto Pengguna -->
             <div class="user-photo">
-                <img src="{{ asset('user/img/profile/' . Auth::user()->photo_profile) }}">
+                <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}">
             </div>
             <!-- Informasi Pengguna -->
             <div class="user-details">

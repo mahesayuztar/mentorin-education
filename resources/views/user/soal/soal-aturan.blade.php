@@ -310,7 +310,7 @@
                         <div class="d-flex align-items-center mt-4">
                             <!-- Foto Profil -->
                             <div class="me-3">
-                                <img src="{{ asset('user/img/profile/'.Auth::user()->photo_profile) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%;">
+                                <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%;">
                             </div>
                             <!-- Nama dan Email -->
                             <div>
@@ -423,7 +423,7 @@
                         <div class="d-flex align-items-center mt-4">
                             <!-- Foto Profil -->
                             <div class="me-3">
-                                <img src="{{ asset('user/img/profile/'.Auth::user()->photo_profile) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%;">
+                                <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%;">
                             </div>
                             <!-- Nama dan Email -->
                             <div>

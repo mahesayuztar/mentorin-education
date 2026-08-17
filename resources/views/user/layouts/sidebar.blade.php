@@ -173,7 +173,7 @@
 
                 <div class="user-dropdown">
                     <div class="user">
-                        <img src="{{ asset('user/img/profile/'.Auth::user()->photo_profile) }}" alt="">
+                        <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="">
                     </div>
                     <!-- Isi dropdown -->
                     <div class="dropdown-content">

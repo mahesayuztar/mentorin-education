@@ -274,7 +274,7 @@
                 @foreach(DB::table('reviews')->get() as $review)
                     <div class="swiper-slide">
                         <div class="review-box">
-                            <img src="{{ asset('user/img/profile/' . $review->photo_profile) }}" alt="">
+                            <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="">
                             <h2>{{ $review->name }}</h2>
                             <span>{{ $review->review_title }}</span>
                             <p>{{ $review->review_description }}</p>

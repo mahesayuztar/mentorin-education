@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phoneNumber');
             $table->string('address');
             $table->string('usertype')->default('user');
-            $table->string('photo_profile')->default('contoh-soal.jpeg');
+            $table->string('photo_profile')->default('https://api.dicebear.com/10.x/personas/webp?seed=default-profile&size=128');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

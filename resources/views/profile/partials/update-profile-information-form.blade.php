@@ -54,7 +54,7 @@
         </div>
 
         <div class="user-photo mt-4">
-            <img id="photo_preview" src="{{ asset('user/img/profile/' . $user->photo_profile) }}" alt="User Photo" class="rounded-full h-20 w-20 object-cover">
+            <img id="photo_preview" src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="User Photo" class="rounded-full h-20 w-20 object-cover">
         </div>
 
         <div class="flex items-center gap-4">

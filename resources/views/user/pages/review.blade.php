@@ -17,7 +17,7 @@
             <div class="form-group">
                 <label for="photo_profile">Foto User</label>
                 <div>
-                    <img src="{{ asset('user/img/profile/'.Auth::user()->photo_profile) }}" alt="User Photo" width="100" id="photo_profile" name="photo_profile">
+                    <img src="{{ str_contains(Auth::user()->photo_profile, 'http') ? Auth::user()->photo_profile : asset('user/img/profile/' . Auth::user()->photo_profile) }}" alt="User Photo" width="100" id="photo_profile" name="photo_profile">
                 </div>
             </div>
 
