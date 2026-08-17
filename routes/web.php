@@ -34,7 +34,7 @@ Route::get('admin/dashboard', [HomeController::class, 'index'])->
     middleware(['auth', 'admin']);
 
 // Route Dashboard
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PaketController::class, 'viewDashboard'])->name('dashboard');
     Route::get('/try-out', [OrderController::class, 'viewOrder'])->name('try-out');
     Route::get('/exercise', function () {
@@ -59,7 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Paket Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/paket-list', [AdminController::class, 'indexPaket']);
     Route::get('/add-paket', [AdminController::class, 'addPaket']);
     Route::post('/save-paket', [AdminController::class, 'savePaket']);
@@ -69,7 +69,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Soal Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/soal-list', [AdminController::class, 'indexSoal']);
     Route::get('/add-soal', [AdminController::class, 'addSoal']);
     Route::post('/save-soal', [AdminController::class, 'saveSoal']);
@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Jawaban Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/jawaban-list', [AdminController::class, 'indexJawaban']);
     Route::get('/add-jawaban', [AdminController::class, 'addJawaban']);
     Route::post('/save-jawaban', [AdminController::class, 'saveJawaban']);
@@ -92,7 +92,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Order Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/edit-order-status/{id}', [AdminController::class, 'editOrderStatus']);
     Route::get('/edit-order-konfirmasi/{id}', [AdminController::class, 'editOrderKonfirmasi']);
     Route::get('/delete-order/{id}', [AdminController::class, 'deleteOrder']);
@@ -171,7 +171,7 @@ Route::middleware('auth')->group(function () {
 
     // Route CPNS Lainnya
     // Route::get('/category/cpns/lainnya-cpns/akademik-cpns', function () {return view('user.category.cpns.lainnya.akademik-cpns');})->name('/category/cpns/lainnya-cpns/akademik-cpns');
-    //Route::get('/category/cpns/lainnya-cpns/psikotes-cpns', function () {return view('user.category.cpns.lainnya.psikotes-cpns');})->name('/category/cpns/lainnya-cpns/psikotes-cpns');
+    // Route::get('/category/cpns/lainnya-cpns/psikotes-cpns', function () {return view('user.category.cpns.lainnya.psikotes-cpns');})->name('/category/cpns/lainnya-cpns/psikotes-cpns');
 
     // Route Psikologi CPNS
     /*

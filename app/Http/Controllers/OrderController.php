@@ -378,14 +378,40 @@ class OrderController extends Controller
 
     public function paymentCallback(Request $request)
     {
-        // return redirect()->back()->withErrors(['info'=>'Hubungi Admin untuk aktivasi']);
-        // dd($request);
-        // Order::where('id', $request->order_id)->update(['nama_paket',"halo"]);
-        if ($request->transaction_status == 'capture' or $request->transaction_status == 'settlement') {
-            // dd('done');
-            Order::where('id', $request->order_id)->update(['status' => 1]);
+        if ($request->isMethod('get')) {
+            return redirect('/try-out')->withErrors([
+                'info' => 'Status pembayaran sedang diproses. Silakan muat ulang halaman beberapa saat lagi.',
+            ]);
         }
 
-        return redirect()->back();
+        $payload = $request->validate([
+            'order_id' => ['required', 'integer'],
+            'status_code' => ['required', 'string'],
+            'gross_amount' => ['required', 'numeric'],
+            'signature_key' => ['required', 'string'],
+            'transaction_status' => ['required', 'string'],
+            'fraud_status' => ['nullable', 'string'],
+        ]);
+
+        $expectedSignature = hash('sha512',
+            $payload['order_id'].
+            $payload['status_code'].
+            $payload['gross_amount'].
+            config('midtrans.serverKey')
+        );
+
+        abort_unless(hash_equals($expectedSignature, $payload['signature_key']), 403, 'Invalid payment signature.');
+
+        $order = Order::findOrFail($payload['order_id']);
+        abort_unless((float) $order->total_amount === (float) $payload['gross_amount'], 422, 'Invalid payment amount.');
+
+        $isPaid = $payload['transaction_status'] === 'settlement'
+            || ($payload['transaction_status'] === 'capture' && ($payload['fraud_status'] ?? 'accept') === 'accept');
+
+        if ($isPaid) {
+            $order->update(['status' => 1]);
+        }
+
+        return response()->json(['received' => true]);
     }
 }
