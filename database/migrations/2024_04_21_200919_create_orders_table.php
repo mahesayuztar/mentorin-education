@@ -22,7 +22,9 @@ return new class extends Migration
             $table->string('token')->default('dummy');
             $table->timestamps();
         });
-        DB::statement('ALTER TABLE orders AUTO_INCREMENT = 20;');
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE orders AUTO_INCREMENT = 20;');
+        }
         // DB::table('orders')->insert(
         //     [
         //         'id_user' => 1,

@@ -20,7 +20,9 @@ return new class extends Migration
             $table->integer('nomor_jawaban');
             $table->timestamps();
         });
-        DB::statement('ALTER TABLE soals AUTO_INCREMENT = 0;');
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE soals AUTO_INCREMENT = 1;');
+        }
     }
 
     /**
