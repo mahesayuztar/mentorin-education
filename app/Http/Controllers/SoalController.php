@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Jawaban;
 use App\Models\Order;
 use App\Models\Paket;
 use App\Models\RiwayatPaket;
 use App\Models\Soal;
+use App\Support\ControllerData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,18 +23,11 @@ class SoalController extends Controller
         if ($paket == null) {
             return redirect(url('/try-out'))->withErrors(['error' => 'Paket tidak tersedia']);
         }
-        $soals = Soal::where('id_paket', $id_paket)->orderBy('nomor_soal')->get();
-        $jawabans = collect();
+        $questionData = ControllerData::questionData($id_paket);
+        $soals = $questionData['questions'];
+        $jawabans = $questionData['answers'];
         foreach ($soals as $soal) {
-            $sub_jawabans = Jawaban::where('nomor_soal', $soal->nomor_soal)->where('id_paket', $id_paket)->get();
-            foreach ($sub_jawabans as $sj) {
-                $jawabans->add($sj);
-            }
-            if ($soal->nomor_jawaban > 9) {
-                $soal->pilgan_kompleks = true;
-            } else {
-                $soal->pilgan_kompleks = false;
-            }
+            $soal->pilgan_kompleks = $soal->nomor_jawaban > 9;
         }
         $id_user = Auth::id();
         $riwayat_paket = RiwayatPaket::where('id_user', $id_user)->where('id_paket', $id_paket)->where('paketan', null)->get()->first();
@@ -188,10 +181,9 @@ class SoalController extends Controller
 
         if (substr($id_paket, 3, 3) == 'PSI') {
             $riwayat_pakets = RiwayatPaket::where('id_user', Auth::id())->where('paketan', $id_paket)->get();
+            $packagesById = ControllerData::packagesById($riwayat_pakets->pluck('id_paket'));
             foreach ($riwayat_pakets as $r) {
-                $paket_ini = Paket::where('id', $r->id_paket)->first();
-                $nama_paket = $paket_ini->nama_paket;
-                $r->nama_paket = $nama_paket;
+                $r->nama_paket = $packagesById->get($r->id_paket)?->nama_paket ?? 'Paket tidak tersedia';
             }
 
             return view('user.soal.soal-hasil')->with([
@@ -204,10 +196,9 @@ class SoalController extends Controller
             ]);
         } elseif (substr($id_paket, 3, 3) == 'DKD') {
             $riwayat_pakets = RiwayatPaket::where('id_user', Auth::id())->where('paketan', $id_paket)->get();
+            $packagesById = ControllerData::packagesById($riwayat_pakets->pluck('id_paket'));
             foreach ($riwayat_pakets as $r) {
-                $paket_ini = Paket::where('id', $r->id_paket)->first();
-                $nama_paket = $paket_ini->nama_paket;
-                $r->nama_paket = $nama_paket;
+                $r->nama_paket = $packagesById->get($r->id_paket)?->nama_paket ?? 'Paket tidak tersedia';
             }
 
             return view('user.soal.soal-hasil')->with([
@@ -234,7 +225,7 @@ class SoalController extends Controller
                     'riwayat_paket' => $riwayat_paket,
                 ]);
             }
-            $jawabans = Jawaban::where('id_paket', $id_paket);
+            $answersByKey = ControllerData::questionData($id_paket)['answers_by_key'];
             $jawaban_asli = [];
             foreach ($soals as $r) {
                 $jawaban_asli[] = $r->nomor_jawaban;
@@ -251,10 +242,9 @@ class SoalController extends Controller
                 if ($i >= 110) {
                     continue;
                 }
-                $copy_jawabans = clone $jawabans;
                 if ($i >= 65) {
                     $tkp_benar++;
-                    $tkp_skor += $copy_jawabans->where('nomor_soal', $i + 1)->where('nomor_jawaban', $r)->first()->skor_jawaban;
+                    $tkp_skor += $answersByKey->get(($i + 1).':'.$r)?->skor_jawaban ?? 0;
                 } else {
                     if ($r == $jawaban_asli[$i]) {
                         if ($i < 30) {
@@ -316,8 +306,10 @@ class SoalController extends Controller
         if ($paket->latihan_soal == 1) {
             Order::where('id_user', Auth::id())->where('id_paket', $hasil['id_paket'])->update(['status' => 2]);
         }
-        $soals = Soal::where('id_paket', $hasil['id_paket'])->orderBy('nomor_soal')->get();
-        $jawabans_saved = Jawaban::where('id_paket', $hasil['id_paket']);
+        $questionData = ControllerData::questionData($hasil['id_paket']);
+        $soals = $questionData['questions'];
+        $soalsByNumber = $questionData['questions_by_number'];
+        $answersByKey = $questionData['answers_by_key'];
         $jawabans = collect();
         foreach ($request->all() as $key => $r) {
             if (substr($key, 0, 7) == 'answerc') {
@@ -341,15 +333,12 @@ class SoalController extends Controller
 
                 $j = $jawabans['answer'.$i];
                 $riwayat_jawaban .= $j.'_';
-                $pointed_jawaban = clone $jawabans_saved;
-                if (strlen($j) == 1) {
-                    $pointed_jawaban = $pointed_jawaban->where('nomor_soal', $i)->where('nomor_jawaban', (int) $j)->get()->first();
-                } else {
-                    $pointed_jawaban = $pointed_jawaban->where('nomor_soal', $i)->where('nomor_jawaban', 1)->get()->first();
-                }
-                if ($j == $soals->where('nomor_soal', $i)->first()->nomor_jawaban) {
+                $answerNumber = strlen($j) === 1 ? (int) $j : 1;
+                $pointed_jawaban = $answersByKey->get($i.':'.$answerNumber);
+                $question = $soalsByNumber->get($i);
+                if ($question && $j == $question->nomor_jawaban) {
                     $benar++;
-                    $score += $pointed_jawaban->skor_jawaban;
+                    $score += $pointed_jawaban?->skor_jawaban ?? 0;
                 } else {
                     $salah++;
                 }
@@ -381,9 +370,10 @@ class SoalController extends Controller
             return redirect(url('/try-out'))->withErrors(['error' => 'Paket tidak tersedia']);
         }
 
-        $soals = Soal::where('id_paket', $id_paket)->orderBy('nomor_soal')->get();
-       
-        $jawabans = collect();
+        $questionData = ControllerData::questionData($id_paket);
+        $soals = $questionData['questions'];
+        $jawabans = $questionData['answers'];
+        $answersByQuestion = $questionData['answers_by_question'];
         $riwayat_paket = RiwayatPaket::where('id_user', Auth::id())->where('id_paket', $id_paket)->get()->first();
         if ($paket->latihan_soal == 1 and $order->status != 2) {
             return redirect(url('/exercise'))->withErrors(['error' => 'Anda belum mengerjakan Latihan Soal ini']);
@@ -396,7 +386,7 @@ class SoalController extends Controller
         $count = 0;
         foreach ($soals as $soal) {
             $soal->benar_jawaban = 1;
-            $sub_jawabans = Jawaban::where('nomor_soal', $soal->nomor_soal)->where('id_paket', $id_paket)->get();
+            $sub_jawabans = $answersByQuestion->get($soal->nomor_soal, collect());
             foreach ($sub_jawabans as $sj) {
                 if ($riwayat_paket->riwayat_jawaban != null and array_key_exists($count, $riwayat_jawaban)) {
                     if (strstr($riwayat_jawaban[$count], $sj->nomor_jawaban) and strstr($soal->nomor_jawaban, $sj->nomor_jawaban) == false) {
@@ -408,7 +398,6 @@ class SoalController extends Controller
                         $soal->benar_jawaban = 3;
                     }
                 }
-                $jawabans->add($sj);
             }
             $count++;
             if ($soal->nomor_jawaban > 9) {
@@ -419,7 +408,7 @@ class SoalController extends Controller
         }
         $riwayat_paket = RiwayatPaket::where('id_user', Auth::id())->where('id_paket', $id_paket)->get()->first();
         $now = Carbon::now();
-        
+
         if ($riwayat_paket == null) {
             RiwayatPaket::create([
                 'id_user' => Auth::id(),
@@ -522,18 +511,11 @@ class SoalController extends Controller
         if ($paket == null) {
             return redirect(url('/try-out'))->withErrors(['error' => 'Paket tidak tersedia']);
         }
-        $soals = Soal::where('id_paket', $id_type[$type])->orderBy('nomor_soal')->get();
-        $jawabans = collect();
+        $questionData = ControllerData::questionData($id_type[$type]);
+        $soals = $questionData['questions'];
+        $jawabans = $questionData['answers'];
         foreach ($soals as $soal) {
-            $sub_jawabans = Jawaban::where('nomor_soal', $soal->nomor_soal)->where('id_paket', $id_type[$type])->get();
-            foreach ($sub_jawabans as $sj) {
-                $jawabans->add($sj);
-            }
-            if ($soal->nomor_jawaban > 9) {
-                $soal->pilgan_kompleks = true;
-            } else {
-                $soal->pilgan_kompleks = false;
-            }
+            $soal->pilgan_kompleks = $soal->nomor_jawaban > 9;
         }
         $id_user = Auth::id();
         $riwayat_paket = RiwayatPaket::where('id_user', $id_user)->where('id_paket', $id_type[$type])->where('paketan', $id_paket)->get()->first();
@@ -622,8 +604,10 @@ class SoalController extends Controller
             ]);
         }
         $id_type_exact = $id_type[$hasil['noted_type']];
-        $soals = Soal::where('id_paket', $id_type_exact)->orderBy('nomor_soal')->get();
-        $jawabans_saved = Jawaban::where('id_paket', $id_type_exact);
+        $questionData = ControllerData::questionData($id_type_exact);
+        $soals = $questionData['questions'];
+        $soalsByNumber = $questionData['questions_by_number'];
+        $answersByKey = $questionData['answers_by_key'];
         // dd($soals);
         $jawabans = collect();
         foreach ($request->all() as $key => $r) {
@@ -646,17 +630,14 @@ class SoalController extends Controller
         for ($i = 1; $i <= count($soals); $i++) {
             if ($jawabans->has('answer'.$i)) {
                 $j = $jawabans['answer'.$i];
-                $pointed_jawaban = clone $jawabans_saved;
-                if (strlen($j) == 1) {
-                    $pointed_jawaban = $pointed_jawaban->where('nomor_soal', $i)->where('nomor_jawaban', (int) $j)->get()->first();
-                } else {
-                    $pointed_jawaban = $pointed_jawaban->where('nomor_soal', $i)->where('nomor_jawaban', 1)->get()->first();
-                }
-                if (substr($id_type_exact, 3, 3) == 'PCM' and $j == $soals->where('nomor_soal', $i)->first()->nomor_jawaban) {
+                $answerNumber = strlen($j) === 1 ? (int) $j : 1;
+                $pointed_jawaban = $answersByKey->get($i.':'.$answerNumber);
+                $question = $soalsByNumber->get($i);
+                if (substr($id_type_exact, 3, 3) == 'PCM' && $question && $j == $question->nomor_jawaban) {
                     $benar++;
-                } elseif ($j == $soals->where('nomor_soal', $i)->first()->nomor_jawaban or $pointed_jawaban->benar_jawaban == 1) {
+                } elseif (($question && $j == $question->nomor_jawaban) || $pointed_jawaban?->benar_jawaban == 1) {
                     $benar++;
-                    $score += $pointed_jawaban->skor_jawaban;
+                    $score += $pointed_jawaban?->skor_jawaban ?? 0;
                 } else {
                     $salah++;
                 }
@@ -745,8 +726,10 @@ class SoalController extends Controller
         if ($paket == null) {
             return redirect(url('/try-out'))->withErrors(['error' => 'Paket tidak tersedia']);
         }
-        $soals = Soal::where('id_paket', $id_paket)->orderBy('nomor_soal')->get();
-        $jawabans = collect();
+        $questionData = ControllerData::questionData($id_paket);
+        $soals = $questionData['questions'];
+        $jawabans = $questionData['answers'];
+        $answersByQuestion = $questionData['answers_by_question'];
         $riwayat_paket = RiwayatPaket::where('id_user', Auth::id())->where('id_paket', $id_paket)->get()->first();
         if ($riwayat_paket == null or $riwayat_paket->status == 0) {
             return redirect(url('/try-out'))->withErrors(['error' => 'Anda belum mengerjakan Paket ini']);
@@ -755,7 +738,7 @@ class SoalController extends Controller
         $riwayat_jawaban = explode('_', $riwayat_jawaban);
         $count = 0;
         foreach ($soals as $soal) {
-            $sub_jawabans = Jawaban::where('nomor_soal', $soal->nomor_soal)->where('id_paket', $id_paket)->get();
+            $sub_jawabans = $answersByQuestion->get($soal->nomor_soal, collect());
             foreach ($sub_jawabans as $sj) {
                 if ($riwayat_paket->riwayat_jawaban != null) {
                     if (strstr($riwayat_jawaban[$count], $sj->nomor_jawaban) and strstr($soal->nomor_jawaban, $sj->nomor_jawaban) == false) {
@@ -765,7 +748,6 @@ class SoalController extends Controller
                         $sj->benar_jawaban = 3;
                     }
                 }
-                $jawabans->add($sj);
             }
             $count++;
             if ($soal->nomor_jawaban > 9) {

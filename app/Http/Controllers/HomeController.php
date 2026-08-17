@@ -30,12 +30,13 @@ class HomeController extends Controller
     {
         $user = Auth::user();
         $riwayat_pakets = RiwayatPaket::where('id_user', $user->id)->where('paketan', null)->get();
-        $pakets = Paket::all();
+        $pakets = Paket::all()->keyBy('id');
         foreach ($riwayat_pakets as $key => $value) {
             if ($value->paketan != null) {
                 continue;
             }
-            if ($pakets->where('id', $value->id_paket)->first()->latihan_soal == 1) {
+            $paket = $pakets->get($value->id_paket);
+            if (! $paket || $paket->latihan_soal == 1) {
                 unset($riwayat_pakets[$key]);
 
                 continue;
@@ -49,8 +50,7 @@ class HomeController extends Controller
                 $riwayat_pakets[$key]->nama_tes = 'TES CPNS';
             }
 
-            $nama_paket = $pakets->where('id', $value->id_paket)->first()->nama_paket;
-            $riwayat_pakets[$key]->nama_paket = $nama_paket;
+            $riwayat_pakets[$key]->nama_paket = $paket->nama_paket;
 
             $waktu_paket = $value->created_at->setTimezone('Asia/Jakarta')->format('H:i:s d-m-Y');
             $riwayat_pakets[$key]->waktu_paket = $waktu_paket;
@@ -71,11 +71,13 @@ class HomeController extends Controller
     public function viewRank()
     {
         $riwayat_pakets = RiwayatPaket::where('paketan', null)->orderBy('id_paket')->orderBy('score', 'desc')->get();
+        $paketsById = Paket::whereIn('id', $riwayat_pakets->pluck('id_paket')->unique())->get()->keyBy('id');
+        $usersById = User::whereIn('id', $riwayat_pakets->pluck('id_user')->unique())->get()->keyBy('id');
         $daftar_paket = collect();
         $daftar_paket->add(['id_paket' => 'semua', 'nama_paket' => 'Semua Paket']);
         foreach ($riwayat_pakets as $key => $value) {
             $id_paket = $value->id_paket;
-            $paket = Paket::where('id', $id_paket)->first();
+            $paket = $paketsById->get($id_paket);
             $nama_paket = $paket ? $paket->nama_paket : 'Unknown Paket';
 
             $updated_at = Carbon::parse($value->updated_at);
@@ -85,7 +87,7 @@ class HomeController extends Controller
             $diff = gmdate('H:i:s', $diffInSeconds);
             $waktu_digunakan = $diff;
 
-            $user = User::where('id', $value->id_user)->first();
+            $user = $usersById->get($value->id_user);
             $nama_user = $user ? $user->name : 'Unknown User';
 
             $riwayat_pakets[$key]->nama_paket = $nama_paket;

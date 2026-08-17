@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Paket;
+use App\Support\ControllerData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,21 +11,21 @@ use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    private function orderData(): array
+    {
+        $orders = ControllerData::activeOrdersForUser(Auth::id());
+
+        return [$orders, ControllerData::packagesById($orders->pluck('id_paket'))];
+    }
+
     public function viewOrder()
     {
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         $tampil = collect();
         foreach ($orders as $order) {
             $string = $order['id_paket'];
             $string_type = Str::substr($string, 0, 3);
-            $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+            $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
             if ($latihan_soal == 0) {
                 $tampil->push($string_type);
             }
@@ -36,14 +36,7 @@ class OrderController extends Controller
 
     public function viewOrderDetails($test)
     {
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         if ($test == 'polri') {
             $tampil = collect();
             foreach ($orders as $order) {
@@ -60,7 +53,7 @@ class OrderController extends Controller
                 } elseif ($string == 'TKJ' or $string == 'PMK') {
                     $string = 'LAI';
                 }
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     $tampil->push($string);
                 }
@@ -83,7 +76,7 @@ class OrderController extends Controller
                 } elseif ($string == 'PKC' or $string == 'PCM' or $string == 'PKR' or $string == 'AKA' or $string == 'KEJ' or $string == 'PRA') {
                     $string = 'LAI';
                 }
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     $tampil->push($string);
                 }
@@ -132,14 +125,7 @@ class OrderController extends Controller
             }
         }
         $type = Str::upper($type);
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         if ($test == 'polri') {
             $tampil = collect();
             foreach ($orders as $order) {
@@ -156,7 +142,7 @@ class OrderController extends Controller
                 $order['nama_paket'] = Str::upper($order->nama_paket);
                 $order['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $order['created_at']);
                 $order['tanggal'] = $order['created_at']->format('d F Y');
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     if ($string == Str::upper($type) and $string_type == 'POL') {
                         $tampil->add($order);
@@ -182,7 +168,7 @@ class OrderController extends Controller
                 $order['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $order['created_at']);
                 $order['tanggal'] = $order['created_at']->format('d F Y');
                 $order['keterangan_panjang'] = Str::upper($to_nama[Str::substr($order['id_paket'], 3, 3)]);
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     if ($string == Str::upper($type) and $string_type == 'PNS') {
                         $tampil->add($order);
@@ -196,19 +182,12 @@ class OrderController extends Controller
 
     public function viewPembahasan()
     {
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         $tampil = collect();
         foreach ($orders as $order) {
             $string = $order['id_paket'];
             $string_type = Str::substr($string, 0, 3);
-            $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+            $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
             if ($latihan_soal == 0) {
                 $tampil->push($string_type);
             }
@@ -219,14 +198,7 @@ class OrderController extends Controller
 
     public function viewPembahasanDetails($test)
     {
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         if ($test == 'polri') {
             $tampil = collect();
             foreach ($orders as $order) {
@@ -243,7 +215,7 @@ class OrderController extends Controller
                 } elseif ($string == 'TKJ' or $string == 'PMK') {
                     $string = 'LAI';
                 }
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     $tampil->push($string);
                 }
@@ -266,7 +238,7 @@ class OrderController extends Controller
                 } elseif ($string == 'PKC' or $string == 'PCM' or $string == 'PKR' or $string == 'AKA' or $string == 'KEJ' or $string == 'PRA') {
                     $string = 'LAI';
                 }
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     $tampil->push($string);
                 }
@@ -313,14 +285,7 @@ class OrderController extends Controller
             }
         }
         $type = Str::upper($type);
-        $orders = Order::where('id_user', Auth::id())
-            ->where(function ($query) {
-                $query->where('status', 0)
-                    ->where('created_at', '>', Carbon::now()->subHours(24));
-            })
-            ->orWhere('status', 1)
-            ->where('id_user', Auth::id())
-            ->get();
+        [$orders, $packagesById] = $this->orderData();
         if ($test == 'polri') {
             $tampil = collect();
             foreach ($orders as $order) {
@@ -338,7 +303,7 @@ class OrderController extends Controller
                 $order['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $order['created_at']);
                 $order['tanggal'] = $order['created_at']->format('d F Y');
                 $order['keterangan_panjang'] = Str::upper($to_nama[Str::substr($order['id_paket'], 3, 3)]);
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     if ($string == Str::upper($type) and $string_type == 'POL' and $order->status == 1) {
                         $tampil->add($order);
@@ -364,7 +329,7 @@ class OrderController extends Controller
                 $order['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $order['created_at']);
                 $order['tanggal'] = $order['created_at']->format('d F Y');
                 $order['keterangan_panjang'] = Str::upper($to_nama[Str::substr($order['id_paket'], 3, 3)]);
-                $latihan_soal = Paket::where('id', $order['id_paket'])->get()->first()->latihan_soal;
+                $latihan_soal = $packagesById->get($order['id_paket'])?->latihan_soal;
                 if ($latihan_soal == 0) {
                     if ($string == Str::upper($type) and $string_type == 'PNS' and $order->status == 1) {
                         $tampil->add($order);

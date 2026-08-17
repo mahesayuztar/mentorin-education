@@ -26,7 +26,7 @@ Route::get('/download/{filename}', function ($filename) {
 Route::fallback([HomeController::class, 'notFoundPage']);
 
 Route::get('/soal', function () {
-    return view('user.pages.soal');
+    return redirect()->route('dashboard');
 });
 
 // Route Admin

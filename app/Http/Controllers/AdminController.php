@@ -73,7 +73,7 @@ class AdminController extends Controller
     {
         $dataPaket = Paket::where('id', '=', $id)->first();
 
-        //dd($dataPaket);
+        // dd($dataPaket);
         return view('admin.edit-paket', compact('dataPaket'));
     }
 
@@ -191,6 +191,7 @@ class AdminController extends Controller
         }
         $soal->save();
 
+        $savedAnswers = collect();
         foreach ($hasil as $key => $value) {
             if (substr($key, 0, 11) == 'isi_jawaban' and $value != null) {
                 $nomor_jawaban = substr($key, 11, 1);
@@ -200,12 +201,14 @@ class AdminController extends Controller
                 $jawaban->nomor_soal = $nomor_soal;
                 $jawaban->isi_jawaban = $value;
                 $jawaban->save();
+                $savedAnswers->put((string) $nomor_jawaban, $jawaban);
                 // dump($jawaban);
             }
             if (substr($key, 0, 14) == 'gambar_jawaban' and $value != null) {
                 $nomor_jawaban = substr($key, 14, 1);
 
-                if (Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->get()->first() == null) {
+                $jawaban = $savedAnswers->get((string) $nomor_jawaban);
+                if (! $jawaban) {
                     dump($nomor_jawaban);
 
                     continue;
@@ -216,23 +219,25 @@ class AdminController extends Controller
                 $filename = substr($filename, 0, $lastDotPos);
                 $nama_gambar_jawaban = $filename.time().'.'.$gambar_jawaban->extension();
                 $gambar_jawaban->move(base_path('../public_html/user/img/jawaban'), $nama_gambar_jawaban);
-                Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->update(['gambar_jawaban' => $nama_gambar_jawaban]);
+                $jawaban->update(['gambar_jawaban' => $nama_gambar_jawaban]);
                 // dump($nomor_jawaban);
             }
             if (substr($key, 0, 13) == 'benar_jawaban' and $value != null) {
                 $nomor_jawaban = substr($key, 13, 1);
-                if (Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->get()->first() == null) {
+                $jawaban = $savedAnswers->get((string) $nomor_jawaban);
+                if (! $jawaban) {
                     continue;
                 }
-                Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->update(['benar_jawaban' => $value]);
+                $jawaban->update(['benar_jawaban' => $value]);
                 // dump($nomor_jawaban);
             }
             if (substr($key, 0, 12) == 'skor_jawaban' and $value != null) {
                 $nomor_jawaban = substr($key, 12, 1);
-                if (Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->get()->first() == null) {
+                $jawaban = $savedAnswers->get((string) $nomor_jawaban);
+                if (! $jawaban) {
                     continue;
                 }
-                Jawaban::where('id_paket', $id_paket)->where('nomor_soal', $nomor_soal)->where('nomor_jawaban', $nomor_jawaban)->update(['skor_jawaban' => $value]);
+                $jawaban->update(['skor_jawaban' => $value]);
                 // dump($nomor_jawaban);
             }
         }

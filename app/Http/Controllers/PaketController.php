@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Paket;
 use App\Models\User;
+use App\Support\ControllerData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Midtrans\Config;
@@ -14,6 +16,11 @@ use Midtrans\Snap;
 
 class PaketController extends Controller
 {
+    private function activeOrdersByPackage(): Collection
+    {
+        return ControllerData::activeOrdersForUser(Auth::id(), includeCompleted: true)->keyBy('id_paket');
+    }
+
     public function viewDashboard()
     {
         $pakets = Paket::get();
@@ -283,6 +290,7 @@ class PaketController extends Controller
                 $type = 'LAI';
             }
         }
+        $ordersByPackage = $this->activeOrdersByPackage();
         foreach ($pakets as $paket) {
             if ($paket->latihan_soal == 0) {
                 continue;
@@ -295,15 +303,7 @@ class PaketController extends Controller
             $paket['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $paket['created_at']);
             $paket['tanggal'] = $paket['created_at']->format('d F Y');
 
-            $orders = Order::where('id_user', Auth::id())
-                ->where(function ($query) {
-                    $query->where('status', 0)
-                        ->where('created_at', '>', Carbon::now()->subHours(24));
-                })
-                ->orWhere('status', '>', 0)
-                ->where('id_user', Auth::id())
-                ->where('id_paket', $paket->id)
-                ->get()->first();
+            $orders = $ordersByPackage->get($paket->id);
             if ($orders == null) {
                 $paket['ordered'] = -1;
             } else {
@@ -385,6 +385,7 @@ class PaketController extends Controller
                 $type = 'AKA';
             }
         }
+        $ordersByPackage = $this->activeOrdersByPackage();
         foreach ($pakets as $paket) {
             if ($paket->latihan_soal == 0) {
                 continue;
@@ -397,15 +398,7 @@ class PaketController extends Controller
             $paket['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $paket['created_at']);
             $paket['tanggal'] = $paket['created_at']->format('d F Y');
 
-            $orders = Order::where('id_user', Auth::id())
-                ->where(function ($query) {
-                    $query->where('status', 0)
-                        ->where('created_at', '>', Carbon::now()->subHours(24));
-                })
-                ->orWhere('status', '>', 0)
-                ->where('id_user', Auth::id())
-                ->where('id_paket', $paket->id)
-                ->get()->first();
+            $orders = $ordersByPackage->get($paket->id);
             if ($orders == null) {
                 $paket['ordered'] = -1;
             } else {
@@ -460,6 +453,7 @@ class PaketController extends Controller
                 $type = 'KEJ';
             }
         }
+        $ordersByPackage = $this->activeOrdersByPackage();
         foreach ($pakets as $paket) {
             if ($paket->latihan_soal == 0) {
                 continue;
@@ -472,15 +466,7 @@ class PaketController extends Controller
             $paket['created_at'] = Carbon::createFromFormat('Y-m-d H:i:s', $paket['created_at']);
             $paket['tanggal'] = $paket['created_at']->format('d F Y');
 
-            $orders = Order::where('id_user', Auth::id())
-                ->where(function ($query) {
-                    $query->where('status', 0)
-                        ->where('created_at', '>', Carbon::now()->subHours(24));
-                })
-                ->orWhere('status', '>', 0)
-                ->where('id_user', Auth::id())
-                ->where('id_paket', $paket->id)
-                ->get()->first();
+            $orders = $ordersByPackage->get($paket->id);
             if ($orders == null) {
                 $paket['ordered'] = -1;
             } else {
