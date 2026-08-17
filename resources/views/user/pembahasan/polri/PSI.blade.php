@@ -29,7 +29,7 @@
                                 </a>
                             </td>
                             <td class="">
-                                <button id="pay-button.{{$t->id}}" class="discussion-btn" style="cursor: pointer;">Bayar</button>
+                                <button id="pay-button.{{$t->id}}" class="discussion-btn" style="cursor: pointer;" @disabled(! config('services.midtrans.popup_enabled'))>Bayar</button>
                             </td>
                         @else
                             <td class="discussion-description">
@@ -40,6 +40,8 @@
                             <td class=""><a href="{{url('/soal/aturan/'.$t->id_paket)}}"><button class="discussion-btn p-0" style="cursor: pointer;">Kerjakan Sekarang</button></a></td>
                             <td class=""><a href="{{url('payment-callback')}}"><button id="pay-button.{{$t->id}}" class="discussion-btn p-0 disabled" disabled>Sudah Dibayar</button></a></td>
                         @endif
+                            {{-- Payment popup is temporarily disabled. --}}
+                            @if(config('services.midtrans.popup_enabled'))
                             <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
                             <script type="text/javascript">
                                 document.getElementById('pay-button.{{$t->id}}').onclick = function(){
@@ -64,6 +66,7 @@
                                 });
                                 };
                             </script>
+                            @endif
                     </tr>
                 @endforeach
             </tbody>

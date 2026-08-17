@@ -31,4 +31,9 @@ return [
         ],
     ],
 
+    'midtrans' => [
+        // Temporarily disabled until the payment popup flow is reworked.
+        'popup_enabled' => env('MIDTRANS_POPUP_ENABLED', false),
+    ],
+
 ];

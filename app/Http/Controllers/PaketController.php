@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class PaketController extends Controller
 {
@@ -495,8 +497,19 @@ class PaketController extends Controller
 
     public function orderPaket(Request $request)
     {
-        $id = $request['submit'];
-        $paket = Paket::where('id', $id)->first();
+        $validated = $request->validate([
+            'submit' => ['required', 'string', 'exists:pakets,id'],
+        ]);
+
+        $id = $validated['submit'];
+        $paket = Paket::findOrFail($id);
+
+        if ($paket->harga_paket > 0 && ! config('services.midtrans.popup_enabled')) {
+            return redirect()->back()->withErrors([
+                'info' => 'Pembayaran online sedang dinonaktifkan sementara. Silakan coba lagi nanti.',
+            ]);
+        }
+
         $string = $paket['id'];
         $paket_type = Str::substr($string, 0, 3);
 
@@ -534,10 +547,10 @@ class PaketController extends Controller
 
         $user_saved = User::where('id', $order_saved['id_user'])->first();
 
-        \Midtrans\Config::$serverKey = config('midtrans.serverKey');
-        \Midtrans\Config::$isProduction = true;
-        \Midtrans\Config::$isSanitized = true;
-        \Midtrans\Config::$is3ds = true;
+        Config::$serverKey = config('midtrans.serverKey');
+        Config::$isProduction = (bool) config('midtrans.isProduction');
+        Config::$isSanitized = (bool) config('midtrans.isSanitized');
+        Config::$is3ds = (bool) config('midtrans.is3ds');
 
         $params = [
             'transaction_details' => [
@@ -552,7 +565,7 @@ class PaketController extends Controller
             ],
         ];
 
-        $snapToken = \Midtrans\Snap::getSnapToken($params);
+        $snapToken = Snap::getSnapToken($params);
 
         $order_saved->update(['token' => $snapToken]);
 
