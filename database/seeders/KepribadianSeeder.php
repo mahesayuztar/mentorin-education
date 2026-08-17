@@ -15,8 +15,10 @@ class KepribadianSeeder extends Seeder
     public function run(): void
     {
         // Seeder paket, soal, dan jawaban kepribadian paket 1
-        Paket::create([
-            'id' => 'POLPKR001',
+        Jawaban::where('id_paket', 'POLPKR001')->delete();
+        Soal::where('id_paket', 'POLPKR001')->delete();
+
+        Paket::updateOrCreate(['id' => 'POLPKR001'], [
             'nama_paket' => 'Tryout Psikologi Kepribadian Paket 1',
             'harga_paket' => 0,
             'durasi_paket' => 3600,

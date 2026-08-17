@@ -15,8 +15,10 @@ class PassHandSeeder extends Seeder
     public function run(): void
     {
         // Seeder paket, soal, dan jawaban pass hand paket 1
-        Paket::create([
-            'id' => 'POLPPH001',
+        Jawaban::where('id_paket', 'POLPPH001')->delete();
+        Soal::where('id_paket', 'POLPPH001')->delete();
+
+        Paket::updateOrCreate(['id' => 'POLPPH001'], [
             'nama_paket' => 'Tryout Psikologi Pass Hand Paket 1',
             'harga_paket' => 0,
             'durasi_paket' => 2700,

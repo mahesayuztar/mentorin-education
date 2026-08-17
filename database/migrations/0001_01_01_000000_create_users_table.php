@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -41,28 +40,6 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
-        DB::table('users')->insert(
-            [
-                'name' => 'admin',
-                'username' => 'admin',
-                'email' => 'admin@gmail.com',
-                'phoneNumber' => '123456789',
-                'address' => 'Jl. Malang',
-                'usertype' => 'admin',
-                'password' => Hash::make('12345678'),
-            ]
-        );
-        DB::table('users')->insert(
-            [
-                'name' => 'user',
-                'username' => 'user',
-                'email' => 'user@gmail.com',
-                'phoneNumber' => '123456789',
-                'address' => 'Jl. Malang',
-                'usertype' => 'user',
-                'password' => Hash::make('12345678'),
-            ]
-        );
     }
 
     /**
