@@ -1,0 +1,13 @@
+.env
+.env.*
+vendor
+node_modules
+public/hot
+public/storage
+storage/logs/*
+.git
+.github
+.idea
+.vscode
+npm-debug.log
+yarn-error.log
